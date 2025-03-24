@@ -7,6 +7,8 @@ This directory contains examples demonstrating how to use the PSUU package for p
 - **basic_usage/**: Simple examples demonstrating the core functionality
 - **cadcad_integration/**: Examples integrating with cadCAD simulation models
 - **cli_usage/**: Examples showing how to use the command-line interface
+- **protocol_example/**: Examples demonstrating the new protocol-based integration
+- **cadcad_integration.py**: Comprehensive example of integrating cadCAD models using the new protocol
 
 ## Basic Usage Examples
 
@@ -15,6 +17,13 @@ This directory contains examples demonstrating how to use the PSUU package for p
 ## cadCAD Integration Examples
 
 - **sir_model_optimization.py**: Demonstrates how to create a custom SimulationConnector to integrate with the cadcad-sandbox SIR model, showcasing both random search and Bayesian optimization
+
+## Protocol-Based Examples
+
+- **protocol_example/sir_model.py**: Example implementation of a model using the CadcadModelProtocol
+- **protocol_example/run_sir_model.py**: Script demonstrating different ways to use the protocol-based model
+- **protocol_example/sir_config.yaml**: Example configuration file for the protocol-based model
+- **cadcad_integration.py**: Script showing how to wrap existing cadCAD models to use with the new protocol
 
 ## CLI Usage Examples
 
@@ -49,6 +58,21 @@ cd ../psuu
 python examples/cadcad_integration/sir_model_optimization.py
 ```
 
+### Protocol-Based Examples
+
+```bash
+# Run the SIR model example
+python examples/protocol_example/run_sir_model.py
+
+# Run specific parts of the example
+python examples/protocol_example/run_sir_model.py --direct
+python examples/protocol_example/run_sir_model.py --config
+python examples/protocol_example/run_sir_model.py --optimize
+
+# Run the cadCAD integration example
+python examples/cadcad_integration.py
+```
+
 ### CLI Usage
 
 ```bash
@@ -58,6 +82,17 @@ chmod +x examples/cli_usage/basic_cli_example.sh
 # Run the script
 ./examples/cli_usage/basic_cli_example.sh
 ```
+
+## Using the New Protocol Interface
+
+The new protocol interface provides a standardized way to integrate models with PSUU:
+
+1. **Implement the Protocol**: Have your model implement the `CadcadModelProtocol`
+2. **Return StandardResults**: Ensure simulations return results in the `SimulationResults` format
+3. **Define Configuration**: Create configuration files for your models
+4. **Use Robust Connectors**: Employ the `RobustCadcadConnector` for enhanced error handling
+
+See the protocol_example directory for detailed examples.
 
 ## Creating Your Own Examples
 

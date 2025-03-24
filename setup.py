@@ -47,7 +47,10 @@ setup(
             "matplotlib>=3.5.0",
             "seaborn>=0.11.0",
         ],
-    },
+        "cadcad": [
+            "cadCAD>=0.4.28",
+        ],
+    ],
     entry_points={
         "console_scripts": [
             "psuu=psuu.cli:main",
@@ -61,7 +64,10 @@ setup(
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
         "Topic :: Scientific/Engineering :: Artificial Intelligence",
+        "Topic :: Scientific/Engineering :: Mathematics",
+        "Topic :: Scientific/Engineering :: Information Analysis",
     ],
     python_requires=">=3.8",
 )

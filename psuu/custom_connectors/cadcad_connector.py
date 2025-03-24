@@ -2,6 +2,9 @@
 CadCAD Simulation Connector for PSUU.
 
 This module provides a custom connector for cadCAD-based simulation models.
+
+Note: For improved error handling and robustness, consider using the
+RobustCadcadConnector from psuu.validation instead.
 """
 
 import os
@@ -19,6 +22,10 @@ from psuu.simulation_connector import SimulationConnector
 class CadcadSimulationConnector(SimulationConnector):
     """
     Custom simulation connector for cadcad-sandbox that handles its specific output format.
+    
+    Note:
+        For applications requiring robust error handling, retry mechanisms,
+        or better parameter validation, use RobustCadcadConnector from psuu.validation.
     """
     
     def run_simulation(self, parameters: Dict[str, Any]) -> pd.DataFrame:

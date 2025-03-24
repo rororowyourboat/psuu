@@ -1,0 +1,55 @@
+model:
+  type: "cadcad"
+  module: "examples.protocol_example.sir_model"
+  entry_point: "SIRModel"
+  init_params:
+    timesteps: 100
+    samples: 5
+  
+parameters:
+  beta:
+    type: "continuous"
+    range: [0.1, 0.5]
+    description: "Transmission rate"
+  gamma:
+    type: "continuous"
+    range: [0.01, 0.1]
+    description: "Recovery rate"
+  population:
+    type: "discrete"
+    range: [1000, 5000, 10000]
+    description: "Total population"
+  initial_infected:
+    type: "continuous"
+    range: [1, 100]
+    description: "Initial number of infected"
+  
+kpis:
+  peak_infections:
+    function: "peak_infections"
+    description: "Maximum number of concurrent infections"
+  total_infections:
+    function: "total_infections"
+    description: "Total number of infections over time"
+  epidemic_duration:
+    function: "epidemic_duration"
+    description: "Duration of the epidemic"
+  r0:
+    function: "calculate_r0"
+    description: "Basic reproduction number"
+  
+optimization:
+  method: "bayesian"
+  objective: "peak_infections"
+  maximize: false
+  iterations: 20
+  options:
+    acquisition_function: "ei"
+    random_state: 42
+    initial_points: 5
+
+output:
+  directory: "results/protocol_example"
+  formats: ["csv", "json", "yaml"]
+  save_all_runs: true
+  visualizations: ["parameter_importance", "optimization_progress"]
