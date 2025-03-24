@@ -8,7 +8,8 @@ Welcome to the PSUU (Parameter Selection Under Uncertainty) documentation. This 
 2. [User Guide](user_guide.md)
 3. [Advanced Usage](advanced_usage.md)
 4. [Custom Simulation Connectors](custom_connectors.md)
-5. [API Reference](api_reference.md)
+5. [Model Cloning and Management](model_cloning.md)
+6. [API Reference](api_reference.md)
 
 ## Overview
 
@@ -20,6 +21,7 @@ PSUU is designed to automate the process of finding optimal parameter sets for s
 - **Python API**: Programmatically set up and run optimization experiments
 - **Multiple Optimization Algorithms**: Grid search, random search, Bayesian optimization
 - **Custom KPI Definitions**: Define your own metrics to optimize
+- **Model Integration**: Clone and automatically configure known simulation models
 - **Extensible Architecture**: Easily add new optimization algorithms or KPI calculations
 
 ### Basic Workflow
@@ -74,6 +76,21 @@ results = experiment.run()
 # Print best parameters
 print(f"Best parameters: {results.best_parameters}")
 print(f"Best score: {results.best_kpis['score']}")
+```
+
+## Quick Model Integration
+
+PSUU makes it easy to work with known simulation models:
+
+```bash
+# List available models
+psuu list-models
+
+# Clone and configure a model
+psuu clone-model cadcad-sandbox
+
+# Run optimization with the cloned model
+psuu run
 ```
 
 ## Next Steps
