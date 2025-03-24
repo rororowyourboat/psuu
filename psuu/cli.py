@@ -351,6 +351,78 @@ def run(config: str, verbose: bool, output: str):
         sys.exit(1)
 
 
+# New commands for cloning and managing models
+
+@cli.command("clone-model")
+@click.argument("model_name")
+@click.option(
+    "--directory", "-d",
+    help="Directory to clone into (default: current directory)"
+)
+@click.option(
+    "--no-install", is_flag=True,
+    help="Skip installing dependencies"
+)
+def clone_model_cmd(model_name: str, directory: Optional[str], no_install: bool):
+    """
+    Clone a simulation model and configure PSUU to use it.
+    
+    MODEL_NAME should be one of the known models (use list-models to see available models).
+    """
+    try:
+        from .clone_model import clone_model
+        clone_model(model_name, directory, not no_install)
+    except ImportError:
+        click.echo("Error: Could not import clone_model module.")
+        sys.exit(1)
+    except ValueError as e:
+        click.echo(f"Error: {str(e)}")
+        sys.exit(1)
+    except Exception as e:
+        click.echo(f"Error cloning model: {str(e)}")
+        sys.exit(1)
+
+
+@cli.command("list-models")
+def list_models_cmd():
+    """
+    List all available models that can be cloned.
+    """
+    try:
+        from .clone_model import list_available_models
+        list_available_models()
+    except ImportError:
+        click.echo("Error: Could not import clone_model module.")
+        sys.exit(1)
+    except Exception as e:
+        click.echo(f"Error listing models: {str(e)}")
+        sys.exit(1)
+
+
+@cli.command("add-custom-model")
+@click.argument("name")
+@click.argument("repo_url")
+@click.option("--description", help="Short description of the model")
+@click.option("--command", help="Command to run the model")
+@click.option("--param-format", help="Format for parameter arguments")
+@click.option("--output-format", help="Format of model outputs (csv or json)")
+def add_custom_model_cmd(
+    name: str,
+    repo_url: str,
+    description: Optional[str],
+    command: Optional[str],
+    param_format: Optional[str],
+    output_format: Optional[str]
+):
+    """
+    Add a custom model to the registry for future cloning.
+    
+    NAME is the name to use for the model.
+    REPO_URL is the Git repository URL to clone.
+    """
+    click.echo("This feature is not yet implemented. Coming in a future version!")
+
+
 def main():
     """Main entry point for the CLI."""
     cli()
