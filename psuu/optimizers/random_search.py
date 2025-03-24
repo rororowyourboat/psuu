@@ -62,6 +62,10 @@ class RandomSearchOptimizer(Optimizer):
                 # Continuous parameter, sample from uniform distribution
                 min_val, max_val = param_range
                 parameters[param_name] = self.rng.uniform(min_val, max_val)
+            elif isinstance(param_range, list) and len(param_range) == 2 and all(isinstance(x, (int, np.integer)) for x in param_range):
+                # Integer range, sample uniformly from integers in range
+                min_val, max_val = param_range
+                parameters[param_name] = int(self.rng.randint(min_val, max_val + 1))
             else:
                 # Discrete parameter, choose random value
                 parameters[param_name] = self.rng.choice(param_range)

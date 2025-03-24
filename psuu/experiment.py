@@ -18,6 +18,34 @@ from .data_aggregator import DataAggregator, KPICalculator
 from .optimizers import AVAILABLE_OPTIMIZERS, Optimizer
 
 
+# Custom JSON encoder to handle NumPy types
+class NumpyEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, np.integer):
+            return int(obj)
+        elif isinstance(obj, np.floating):
+            return float(obj)
+        elif isinstance(obj, np.ndarray):
+            return obj.tolist()
+        return super().default(obj)
+
+
+def convert_numpy_types(obj: Any) -> Any:
+    """Convert NumPy types to native Python types."""
+    if isinstance(obj, np.integer):
+        return int(obj)
+    elif isinstance(obj, np.floating):
+        return float(obj)
+    elif isinstance(obj, np.ndarray):
+        return obj.tolist()
+    elif isinstance(obj, dict):
+        return {k: convert_numpy_types(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [convert_numpy_types(item) for item in obj]
+    else:
+        return obj
+
+
 class PsuuExperiment:
     """
     Main class for setting up and running parameter optimization experiments.
@@ -299,13 +327,13 @@ class ExperimentResults:
         results_dict = {
             "iterations": self.iterations,
             "elapsed_time": self.elapsed_time,
-            "best_parameters": self.best_parameters,
-            "best_kpis": self.best_kpis,
-            "summary": self.summary,
+            "best_parameters": convert_numpy_types(self.best_parameters),
+            "best_kpis": convert_numpy_types(self.best_kpis),
+            "summary": convert_numpy_types(self.summary),
         }
         
         with open(path, "w") as f:
-            json.dump(results_dict, f, indent=2)
+            json.dump(results_dict, f, indent=2, cls=NumpyEncoder)
     
     def save(self, base_path: str) -> None:
         """
@@ -327,9 +355,9 @@ class ExperimentResults:
         results_dict = {
             "iterations": self.iterations,
             "elapsed_time": self.elapsed_time,
-            "best_parameters": self.best_parameters,
-            "best_kpis": self.best_kpis,
-            "summary": self.summary,
+            "best_parameters": convert_numpy_types(self.best_parameters),
+            "best_kpis": convert_numpy_types(self.best_kpis),
+            "summary": convert_numpy_types(self.summary),
             "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
         }
         
