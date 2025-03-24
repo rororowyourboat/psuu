@@ -13,96 +13,93 @@ psuu/
 │   ├── experiment.py           # Main experiment controller
 │   ├── cli.py                  # Command-line interface
 │   └── optimizers/             # Optimization algorithms
-│       ├── __init__.py         # Optimizer registry
-│       ├── base.py             # Base Optimizer class
-│       ├── grid_search.py      # Grid Search implementation
-│       ├── random_search.py    # Random Search implementation
-│       └── bayesian.py         # Bayesian Optimization implementation
+│       ├── __init__.py         # Optimizer registration
+│       ├── base.py             # Abstract base optimizer
+│       ├── grid_search.py      # Grid search implementation
+│       ├── random_search.py    # Random search implementation
+│       └── bayesian.py         # Bayesian optimization implementation
 ├── tests/                      # Test directory
-│   ├── __init__.py             # Test package initialization
-│   └── test_simulation_connector.py # Tests for simulation connector
-├── examples/                   # Example scripts
-│   ├── sir_optimization.py     # Python API example with SIR model
+│   ├── __init__.py
+│   └── test_simulation_connector.py
+├── examples/                   # Example usage
+│   ├── sir_optimization.py     # Example with SIR model
 │   └── cli_example.sh          # CLI usage example
-├── README.md                   # Project documentation
 ├── LICENSE                     # MIT License
-├── .gitignore                  # Git ignore configuration
-├── pyproject.toml              # Modern Python project configuration
-└── setup.py                    # Traditional setup script (alternative)
+├── README.md                   # Project documentation
+├── SUMMARY.md                  # This summary file
+├── pyproject.toml              # Modern Python packaging
+├── setup.py                    # Traditional setup script
+└── .gitignore                  # Git ignore patterns
 ```
 
 ## Key Components
 
-1. **Simulation Connector**
-   - Handles interfacing with external simulation models via command-line
-   - Manages parameter passing and result collection
+### Core Modules
+1. **Simulation Connector**: Interfaces with simulation models via CLI, handling parameter passing and result collection
+2. **Data Aggregator & KPI Calculator**: Processes simulation outputs and calculates custom Key Performance Indicators
+3. **Optimization Engine**: Implements multiple optimization strategies for parameter search
+4. **Experiment Controller**: Manages the optimization workflow and feedback loop
+5. **Command-line Interface**: Provides user-friendly access through CLI commands
 
-2. **Data Aggregator & KPI Calculator**
-   - Processes simulation outputs
-   - Calculates custom and predefined KPIs
-   - Aggregates results across multiple runs
+### Optimization Algorithms
+1. **Grid Search**: Exhaustive search across discretized parameter space
+2. **Random Search**: Stochastic sampling of parameter combinations
+3. **Bayesian Optimization**: Probabilistic model-based approach for efficient exploration
 
-3. **Optimization Engines**
-   - Base optimizer class with common interface
-   - Grid search for exhaustive parameter exploration
-   - Random search for efficient exploration of large spaces
-   - Bayesian optimization for intelligent parameter selection
+## User Workflows
 
-4. **Experiment Controller**
-   - Central coordinator for optimization process
-   - Manages parameter space exploration
-   - Provides unified API for configuration and execution
+### Python API
+```python
+from psuu import PsuuExperiment
 
-5. **Command-Line Interface**
-   - User-friendly CLI for configuration and execution
-   - Supports YAML configuration files for reproducibility
-   - Commands for adding parameters, KPIs, and selecting optimizers
+# Create experiment
+experiment = PsuuExperiment(simulation_command="cadcad-sir")
 
-## User Interface
+# Define KPIs
+experiment.add_kpi("peak", column="I", operation="max")
 
-The package provides two main interfaces:
+# Set parameter space
+experiment.set_parameter_space({
+    "beta": (0.1, 0.5),
+    "gamma": (0.01, 0.1)
+})
 
-1. **Python API**
-   ```python
-   from psuu import PsuuExperiment
-   
-   # Define experiment
-   experiment = PsuuExperiment(simulation_command="your_simulation_cmd")
-   
-   # Add KPIs
-   experiment.add_kpi("peak", column="metric", operation="max")
-   
-   # Set parameter space
-   experiment.set_parameter_space({"param1": (0.1, 0.5), "param2": [1, 2, 3]})
-   
-   # Configure optimizer
-   experiment.set_optimizer(method="bayesian", objective_name="peak")
-   
-   # Run experiment
-   results = experiment.run()
-   ```
+# Configure optimizer
+experiment.set_optimizer(method="bayesian", objective_name="peak", maximize=False)
 
-2. **Command-Line Interface**
-   ```bash
-   # Initialize
-   psuu init
-   
-   # Add parameters and KPIs
-   psuu add-param --name "param1" --range 0.1 0.5
-   psuu add-kpi --name "peak" --column "metric" --operation "max"
-   
-   # Configure optimizer
-   psuu set-optimizer --method "bayesian" --objective "peak"
-   
-   # Run experiment
-   psuu run
-   ```
+# Run optimization
+results = experiment.run()
+```
+
+### Command-line Interface
+```bash
+# Initialize configuration
+psuu init
+
+# Define parameters and KPIs
+psuu add-param --name "beta" --range 0.1 0.5
+psuu add-kpi --name "peak" --column "I" --operation "max"
+
+# Configure optimizer
+psuu set-optimizer --method "random" --objective "peak" --minimize
+
+# Run optimization
+psuu run
+```
 
 ## Next Steps
 
-1. **Integration Testing**: Test the package with actual cadCAD simulations
-2. **Documentation**: Expand documentation with more examples and usage scenarios
-3. **Enhanced Visualization**: Add visualization tools for parameter spaces and results
-4. **Parallel Execution**: Implement parallel simulation runs for efficiency
-5. **Additional Optimizers**: Add more optimization algorithms (e.g., evolutionary algorithms)
-6. **Result Analysis Tools**: Develop tools for analyzing optimization results
+1. **Integration Testing**: Create comprehensive tests with actual simulation models
+2. **Documentation**: Add detailed API documentation and tutorials
+3. **Visualization**: Implement result visualization tools
+4. **Parallel Execution**: Add support for running multiple simulations in parallel
+5. **Advanced Optimizers**: Implement additional optimization algorithms (e.g., genetic algorithms)
+6. **Configuration Interface**: Create a more flexible configuration system for complex simulation models
+7. **Results Analysis**: Enhance result analysis and reporting capabilities
+
+## Dependencies
+
+- Core: numpy, pandas, pyyaml, click
+- Bayesian optimization: scikit-optimize
+- Development: pytest, black, isort, mypy, flake8
+- Visualization (optional): matplotlib, seaborn
