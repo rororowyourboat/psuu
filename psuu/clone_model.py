@@ -36,7 +36,8 @@ KNOWN_MODELS = {
             "r0": {"type": "custom", "function": "calculate_r0"}
         },
         "connector_type": "cadcad",
-        "connector_module": "custom_connectors.cadcad_connector"
+        "connector_module": "psuu.custom_connectors.cadcad_connector",
+        "dependencies": ["cadCAD==0.5.3"]
     },
     # Add more models here as they become supported
 }
@@ -93,16 +94,28 @@ def clone_repo(repo_url: str, target_dir: Optional[str] = None) -> str:
     return clone_path
 
 
-def install_dependencies(repo_path: str) -> None:
+def install_dependencies(repo_path: str, model_name: str = None) -> None:
     """
     Install dependencies for the cloned repository.
     
     Args:
         repo_path: Path to the cloned repository
+        model_name: Name of the model (to check for specific dependencies)
         
     Raises:
         subprocess.CalledProcessError: If installation fails
     """
+    # Install specific dependencies if provided in registry
+    if model_name and model_name in KNOWN_MODELS and "dependencies" in KNOWN_MODELS[model_name]:
+        print(f"Installing specific dependencies for {model_name}...")
+        for dependency in KNOWN_MODELS[model_name]["dependencies"]:
+            subprocess.run(
+                ["pip", "install", dependency],
+                check=True,
+                capture_output=True,
+                text=True
+            )
+    
     # Check for requirements.txt
     req_file = os.path.join(repo_path, "requirements.txt")
     if os.path.exists(req_file):
@@ -156,160 +169,43 @@ def generate_custom_connector(model_name: str, repo_path: str) -> Tuple[str, str
     if model_name not in KNOWN_MODELS:
         raise ValueError(f"Unknown model: {model_name}")
     
-    # Create custom connectors directory if it doesn't exist
-    connectors_dir = os.path.join(os.getcwd(), "custom_connectors")
-    os.makedirs(connectors_dir, exist_ok=True)
-    
-    # Initialize __init__.py if it doesn't exist
-    init_file = os.path.join(connectors_dir, "__init__.py")
-    if not os.path.exists(init_file):
-        with open(init_file, "w") as f:
-            f.write('"""Custom connector modules for PSUU."""\n')
-    
-    # Generate connector file based on model type
+    # Get connector module info
     model_info = KNOWN_MODELS[model_name]
+    connector_module = model_info.get("connector_module")
+    
+    # If connector_module is specified and already exists, just return it
+    if connector_module:
+        module_name = connector_module.split(".")[-1]
+        package_parts = connector_module.split(".")[:-1]
+        package_path = os.path.join(*package_parts)
+        connector_path = os.path.join(package_path, f"{module_name}.py")
+        
+        # Return the path relative to the current directory
+        base_dir = os.getcwd()
+        if os.path.isabs(connector_path):
+            rel_path = os.path.relpath(connector_path, base_dir)
+        else:
+            rel_path = connector_path
+            
+        return rel_path, connector_module
+    
+    # Otherwise, we need to generate it
     connector_type = model_info.get("connector_type", "generic")
     
     if connector_type == "cadcad":
-        connector_content = """
-"""
-        connector_path = os.path.join(connectors_dir, "cadcad_connector.py")
-        
-        # Check if we need to create the connector file
-        if not os.path.exists(connector_path):
-            with open(connector_path, "w") as f:
-                f.write('''"""
-CadCAD Simulation Connector for PSUU.
-
-This module provides a custom connector for cadCAD-based simulation models.
-"""
-
-import os
-import tempfile
-import subprocess
-import json
-import pandas as pd
-import numpy as np
-from typing import Dict, Any
-import time
-
-from psuu.simulation_connector import SimulationConnector
-
-
-class CadcadSimulationConnector(SimulationConnector):
-    """
-    Custom simulation connector for cadcad-sandbox that handles its specific output format.
-    """
-    
-    def run_simulation(self, parameters: Dict[str, Any]) -> pd.DataFrame:
-        """
-        Run the simulation with the given parameters and return results.
-        
-        Args:
-            parameters: Dictionary of parameter names and values
-            
-        Returns:
-            DataFrame containing simulation results
-        """
-        # Convert any numpy types to native Python types
-        cleaned_params = {}
-        for key, value in parameters.items():
-            if isinstance(value, np.integer):
-                cleaned_params[key] = int(value)
-            elif isinstance(value, np.floating):
-                cleaned_params[key] = float(value)
-            else:
-                cleaned_params[key] = value
-        
-        cmd = self._build_command(cleaned_params)
-        timestamp = time.strftime("%Y_%m_%d_%H_%M_%S")
-        output_name = f"psuu_run_{timestamp}"
-        
-        # Add output parameter to command
-        cmd = f"{cmd} --output {output_name}"
-        
-        # Run simulation
-        try:
-            result = subprocess.run(
-                cmd,
-                shell=True,
-                check=True,
-                cwd=self.working_dir,
-                env=os.environ.copy(),
-                capture_output=True,
-                text=True
-            )
-            
-            # Find the latest simulation output files
-            sim_dir = os.path.join(self.working_dir, "data", "simulations")
-            files = [f for f in os.listdir(sim_dir) if f.endswith('.json') and output_name in f]
-            
-            if not files:
-                raise FileNotFoundError(f"No output files found with name {output_name}")
-            
-            # Get the latest KPI file
-            kpi_file = sorted(files)[-1]
-            
-            # Load KPI data
-            with open(os.path.join(sim_dir, kpi_file), 'r') as f:
-                kpi_data = json.load(f)
-            
-            # Convert KPI data to DataFrame for compatibility with our KPI functions
-            # Create a synthetic DataFrame with just the KPI values
-            peak = kpi_data['peak_infections']['mean']
-            total = kpi_data['total_infections']['mean']
-            duration = kpi_data['epidemic_duration']['mean']
-            r0 = kpi_data['r0']['mean']
-            
-            df = pd.DataFrame({
-                'timestep': [0],
-                'I': [peak],         # Using peak as I value
-                'S': [1000 - total], # Estimating S from total infections
-                'R': [total],        # Using total as R value
-                'duration': [duration],
-                'r0': [r0]
-            })
-            
-            return df
-            
-        except subprocess.CalledProcessError as e:
-            print(f"Simulation failed with error: {e}")
-            print(f"Stdout: {e.stdout}")
-            print(f"Stderr: {e.stderr}")
-            # Return empty DataFrame with expected columns
-            return pd.DataFrame(columns=['timestep', 'I', 'S', 'R', 'duration', 'r0'])
-
-
-# Custom KPI Functions
-
-def peak_infections(df: pd.DataFrame) -> float:
-    """Calculate peak infections KPI from simulation output."""
-    # Since we're using the synthetic DataFrame, I is directly the peak
-    return df['I'].iloc[0]
-
-
-def total_infections(df: pd.DataFrame) -> float:
-    """Calculate total infections KPI from simulation output."""
-    # In our synthetic DataFrame, R is the total infections
-    return df['R'].iloc[0]
-
-
-def epidemic_duration(df: pd.DataFrame) -> float:
-    """Calculate epidemic duration KPI from simulation output."""
-    # In our synthetic DataFrame, duration is directly available
-    return df['duration'].iloc[0]
-
-
-def calculate_r0(df: pd.DataFrame) -> float:
-    """Calculate basic reproduction number."""
-    # In our synthetic DataFrame, r0 is directly available
-    return df['r0'].iloc[0]
-''')
-        
-        return connector_path, "custom_connectors.cadcad_connector"
-    
+        # Use the existing connector in the psuu package
+        return "psuu/custom_connectors/cadcad_connector.py", "psuu.custom_connectors.cadcad_connector"
     else:
-        # Generic connector
+        # Generic connector - create a custom one
+        connectors_dir = os.path.join(os.getcwd(), "psuu", "custom_connectors")
+        os.makedirs(connectors_dir, exist_ok=True)
+        
+        # Initialize __init__.py if it doesn't exist
+        init_file = os.path.join(connectors_dir, "__init__.py")
+        if not os.path.exists(init_file):
+            with open(init_file, "w") as f:
+                f.write('"""Custom connector modules for PSUU."""\n')
+        
         connector_path = os.path.join(connectors_dir, f"{model_name}_connector.py")
         
         # Only create if it doesn't exist
@@ -372,7 +268,7 @@ class {model_name.capitalize().replace('-', '')}Connector(SimulationConnector):
                 os.unlink(temp_file_path)
 ''')
         
-        module_name = f"custom_connectors.{model_name}_connector"
+        module_name = f"psuu.custom_connectors.{model_name}_connector"
         return connector_path, module_name
 
 
@@ -399,7 +295,7 @@ def create_kpi_functions(model_name: str) -> Dict[str, Any]:
     for kpi_name, kpi_info in default_kpis.items():
         if kpi_info.get("type") == "custom":
             # Get connector module name from model info
-            connector_module = model_info.get("connector_module", f"custom_connectors.{model_name}_connector")
+            connector_module = model_info.get("connector_module", f"psuu.custom_connectors.{model_name}_connector")
             kpi_config[kpi_name] = {
                 "type": "custom",
                 "module": connector_module,
@@ -636,7 +532,7 @@ def clone_model(model_name: str, target_dir: Optional[str] = None, install: bool
     # Install dependencies if requested
     if install:
         try:
-            install_dependencies(repo_path)
+            install_dependencies(repo_path, model_name)
             print(f"Installed dependencies for {model_name}")
         except subprocess.CalledProcessError as e:
             print(f"Error installing dependencies: {e}")
@@ -670,4 +566,6 @@ def list_available_models() -> None:
         print(f"  Repository: {info['repo']}")
         print(f"  Description: {info.get('description', 'No description')}")
         print(f"  Command: {info.get('main_command', 'python -m model')}")
+        if "dependencies" in info:
+            print(f"  Dependencies: {', '.join(info['dependencies'])}")
         print()
