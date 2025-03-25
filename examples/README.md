@@ -94,14 +94,86 @@ The new protocol interface provides a standardized way to integrate models with 
 
 See the protocol_example directory for detailed examples.
 
+## Key Features Demonstrated
+
+### 1. Standardized Model Protocol
+
+```python
+from psuu import CadcadModelProtocol, SimulationResults
+
+class MyModel(CadcadModelProtocol):
+    def run(self, params, **kwargs):
+        # Implement model logic
+        # ...
+        return SimulationResults(...)
+    
+    def get_parameter_space(self):
+        return {"param1": (0, 1), ...}
+    
+    def get_kpi_definitions(self):
+        return {"kpi1": lambda df: df["value"].max(), ...}
+```
+
+### 2. Standardized Results Format
+
+```python
+from psuu import SimulationResults
+
+results = SimulationResults(
+    time_series_data=df,
+    kpis={"peak": 100.0, "total": 5000.0},
+    metadata={"model": "SIR", "version": "1.0.0"},
+    parameters={"beta": 0.3, "gamma": 0.05}
+)
+
+# Save results in multiple formats
+results.save("results/simulation", formats=["csv", "json"])
+```
+
+### 3. Configuration-Based Integration
+
+```python
+from psuu import PsuuConfig
+
+# Load configuration
+config = PsuuConfig("config.yaml")
+
+# Validate configuration
+is_valid, errors = config.validate()
+
+# Load model from configuration
+model = config.load_model()
+
+# Run the model
+results = model.run({"param1": 0.5, "param2": 3})
+```
+
+### 4. Robust Error Handling
+
+```python
+from psuu import RobustCadcadConnector
+
+connector = RobustCadcadConnector(
+    command="python -m model",
+    error_policy="retry",
+    retry_attempts=3,
+    error_log_file="errors.log"
+)
+
+# Run simulation with error handling
+results = connector.run_simulation({"param1": 0.5, "param2": 3})
+```
+
 ## Creating Your Own Examples
 
 The PSUU package is designed to be flexible and can be integrated with various simulation models. To create your own examples:
 
-1. Define your simulation command and parameter format
+1. Define your simulation command and parameter format (for CLI-based models)
 2. Create KPI functions to evaluate simulation outputs
 3. Define the parameter space to explore
 4. Choose an optimization algorithm
 5. Run the optimization and analyze the results
+
+Alternatively, implement the `ModelProtocol` interface for direct integration.
 
 See the existing examples for inspiration and refer to the [documentation](../docs/) for more details.

@@ -2,34 +2,50 @@
 
 PSUU is a Python package designed to automate the process of parameter selection and optimization for simulation models under uncertainty, with a focus on cadCAD simulations.
 
-## Overview
+## 📋 Overview
 
 PSUU provides a framework for:
-- Interfacing with simulation models via command-line interfaces or direct Python API
+- Interfacing with simulation models via standardized protocols
 - Defining custom Key Performance Indicators (KPIs) for evaluation
 - Exploring parameter spaces using various optimization algorithms
 - Analyzing and visualizing results
-- Standardized model protocol interface for seamless integration
+- Implementing robust error handling and validation
 
-## Key Features
+## ✨ Key Features
 
+- **Standardized Model Protocol**: Define a consistent interface for model integration
 - **Flexible Simulation Interface**: Connect to any CLI-based or Python-based simulation model
-- **Standard Model Protocol**: Define a consistent interface for model integration
+- **Configuration-Based Integration**: Integration through YAML or JSON configuration files
 - **Custom KPI Definitions**: Define your own metrics to optimize for your specific model
 - **Multiple Optimization Strategies**: Choose from grid search, random search, Bayesian optimization, and more
-- **Feedback Control**: Iterative optimization leveraging simulation results
-- **Extensible Architecture**: Easily add new optimization algorithms or KPI calculations
-- **Configuration-Based Integration**: Integration through YAML or JSON configuration files
 - **Robust Error Handling**: Improved error handling and parameter validation
 - **Standardized Results Format**: Unified format for simulation results
+- **Extensible Architecture**: Easily add new optimization algorithms or KPI calculations
 
-## Installation
+## 🔧 Installation
 
 ```bash
 pip install psuu
 ```
 
-## Quick Start
+For additional features:
+```bash
+# For Bayesian optimization support
+pip install "psuu[bayesian]"
+
+# For visualization features
+pip install "psuu[visualization]"
+
+# For cadCAD integration
+pip install "psuu[cadcad]"
+
+# For development
+pip install "psuu[dev]"
+```
+
+## 🚀 Quick Start
+
+### Python API
 
 ```python
 from psuu import PsuuExperiment
@@ -64,7 +80,7 @@ results = experiment.run()
 best_params = results.best_parameters
 ```
 
-## Using the Model Protocol
+### Using the Model Protocol
 
 ```python
 from psuu import CadcadModelProtocol, SimulationResults
@@ -95,7 +111,7 @@ class MyModel(CadcadModelProtocol):
         }
 ```
 
-## Configuration-Based Integration
+### Configuration-Based Integration
 
 ```yaml
 # config.yaml
@@ -129,11 +145,11 @@ config = PsuuConfig("config.yaml")
 # Load model
 model = config.load_model()
 
-# Run optimization
+# Run optimization with the model
 # ...
 ```
 
-## CLI Usage
+### CLI Usage
 
 ```bash
 # Initialize configuration
@@ -149,13 +165,26 @@ psuu add-kpi --name "peak" --column "metric_column" --operation "max"
 psuu run
 ```
 
-## Examples
+## 📚 Documentation
+
+For more detailed information, check out the following resources:
+
+- [Getting Started](docs/getting_started.md): Basic usage instructions
+- [User Guide](docs/user_guide.md): More detailed guidance
+- [API Reference](docs/api_reference.md): Detailed API documentation
+- [Examples](examples/README.md): Example usage scenarios
+
+## 🧪 Examples
 
 Check out the `examples` directory for comprehensive examples:
 
 - `protocol_example`: Demonstrates the use of the model protocol interface
 - `cadcad_integration.py`: Shows how to integrate cadCAD models using the new protocol
 
-## License
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## 📜 License
 
 MIT

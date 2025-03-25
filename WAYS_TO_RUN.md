@@ -19,7 +19,71 @@ experiment.set_optimizer(method="random", objective_name="metric")
 results = experiment.run()
 ```
 
-## 2. Using the CLI as a Module
+## 2. Using the Protocol Interface
+
+You can implement the Model Protocol interface for more direct integration:
+
+```python
+from psuu import CadcadModelProtocol, SimulationResults
+
+class MyModel(CadcadModelProtocol):
+    def run(self, params, **kwargs):
+        # Run your simulation logic
+        # ...
+        
+        # Return standardized results
+        return SimulationResults(
+            time_series_data=results_df,
+            kpis={"metric": value},
+            parameters=params
+        )
+    
+    def get_parameter_space(self):
+        return {"param1": (0, 1), "param2": [1, 2, 3]}
+    
+    def get_kpi_definitions(self):
+        return {"metric": lambda df: df["value"].max()}
+
+# Use the model
+model = MyModel()
+results = model.run({"param1": 0.5, "param2": 2})
+```
+
+## 3. Using Configuration Files
+
+You can configure PSUU through YAML or JSON configuration files:
+
+```python
+from psuu import PsuuConfig
+
+# Load configuration
+config = PsuuConfig("config.yaml")
+
+# Load model
+model = config.load_model()
+
+# Run simulation or optimization
+results = model.run({"param1": 0.5, "param2": 2})
+```
+
+Example configuration file (config.yaml):
+```yaml
+model:
+  type: "cadcad"
+  module: "my_model"
+  entry_point: "MyModel"
+  
+parameters:
+  param1: [0, 1]
+  param2: [1, 2, 3]
+  
+kpis:
+  metric:
+    function: "calculate_metric"
+    description: "My metric"
+```
+
+## 4. Using the CLI as a Module
 
 You can run PSUU using Python's module execution syntax:
 
@@ -39,7 +103,7 @@ uv run python -m psuu init
 uv run python -m psuu run
 ```
 
-## 3. Using the Installed CLI Command
+## 5. Using the Installed CLI Command
 
 If the package is correctly installed with pip/uv, you can use the `psuu` command directly:
 
@@ -53,7 +117,7 @@ psuu add-param --name "param1" --range 0 1
 psuu run
 ```
 
-## 4. Using the Script in bin Directory
+## 6. Using the Script in bin Directory
 
 You can also run the script directly from the bin directory:
 
@@ -66,7 +130,7 @@ source .venv/bin/activate
 ./bin/psuu run
 ```
 
-## 5. Using a Custom Script
+## 7. Using a Custom Script
 
 You can create your own script that uses PSUU:
 
@@ -116,6 +180,16 @@ If you get "No module named 'psuu'" when trying to import or run the package:
    python -c "import sys; print(sys.path)"
    ```
    The project directory should be in the path.
+
+### Model Protocol Import Error
+
+If you get an error importing the protocol interfaces:
+
+1. Make sure you've installed the latest version of the package
+2. Try importing directly:
+   ```python
+   from psuu.protocols import ModelProtocol, CadcadModelProtocol
+   ```
 
 ### Other CLI Issues
 

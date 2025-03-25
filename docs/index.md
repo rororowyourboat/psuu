@@ -5,23 +5,28 @@ Welcome to the PSUU (Parameter Selection Under Uncertainty) documentation. This 
 ## Contents
 
 1. [Getting Started](getting_started.md)
-2. [User Guide](user_guide.md)
-3. [Advanced Usage](advanced_usage.md)
-4. [Custom Simulation Connectors](custom_connectors.md)
-5. [Model Cloning and Management](model_cloning.md)
-6. [API Reference](api_reference.md)
+2. [Model Protocol Interface](model_protocol.md)
+3. [Configuration-Based Integration](configuration.md)
+4. [Simulation Connectors](custom_connectors.md)
+5. [Robust Error Handling](error_handling.md)
+6. [Model Cloning and Management](model_cloning.md)
+7. [API Reference](api_reference.md)
 
 ## Overview
 
-PSUU is designed to automate the process of finding optimal parameter sets for simulation models, particularly those with uncertainty in their outputs. The package provides a flexible framework that can interface with any command-line based simulation model.
+PSUU is designed to automate the process of finding optimal parameter sets for simulation models, particularly those with uncertainty in their outputs. The package provides a flexible framework that can interface with any command-line based simulation model or directly with Python-based models through our protocol interface.
 
 ### Key Features
 
+- **Standardized Model Protocol**: Define a consistent interface for model integration
+- **Flexible Simulation Interface**: Connect to any CLI-based or Python-based simulation model
+- **Configuration-Based Integration**: Integration through YAML or JSON configuration files
+- **Custom KPI Definitions**: Define your own metrics to optimize for your specific model
+- **Multiple Optimization Strategies**: Choose from grid search, random search, Bayesian optimization, and more
+- **Robust Error Handling**: Improved error handling and parameter validation
+- **Standardized Results Format**: Unified format for simulation results
 - **Command-line Interface**: Run experiments from the terminal
 - **Python API**: Programmatically set up and run optimization experiments
-- **Multiple Optimization Algorithms**: Grid search, random search, Bayesian optimization
-- **Custom KPI Definitions**: Define your own metrics to optimize
-- **Model Integration**: Clone and automatically configure known simulation models
 - **Extensible Architecture**: Easily add new optimization algorithms or KPI calculations
 
 ### Basic Workflow
@@ -38,15 +43,22 @@ PSUU is designed to automate the process of finding optimal parameter sets for s
 pip install psuu
 ```
 
-Or for development:
-
+For additional features:
 ```bash
-git clone https://github.com/yourusername/psuu.git
-cd psuu
-pip install -e .
+# For Bayesian optimization support
+pip install "psuu[bayesian]"
+
+# For visualization features
+pip install "psuu[visualization]"
+
+# For cadCAD integration
+pip install "psuu[cadcad]"
+
+# For development
+pip install "psuu[dev]"
 ```
 
-## Quick Example
+## Quick Example: Python API
 
 ```python
 from psuu import PsuuExperiment
@@ -78,19 +90,76 @@ print(f"Best parameters: {results.best_parameters}")
 print(f"Best score: {results.best_kpis['score']}")
 ```
 
-## Quick Model Integration
+## Quick Example: Protocol Interface
 
-PSUU makes it easy to work with known simulation models:
+```python
+from psuu import CadcadModelProtocol, SimulationResults
 
-```bash
-# List available models
-psuu list-models
+class MyModel(CadcadModelProtocol):
+    def run(self, params, **kwargs):
+        # Implement model logic
+        results_df = self._run_simulation(params)
+        
+        # Return standardized results
+        return SimulationResults(
+            time_series_data=results_df,
+            kpis={"score": results_df['score'].max()},
+            metadata={"model_version": "1.0.0"},
+            parameters=params
+        )
+    
+    def get_parameter_space(self):
+        return {
+            "alpha": (0.1, 0.9),
+            "beta": [1, 2, 3, 4, 5]
+        }
+    
+    def get_kpi_definitions(self):
+        return {
+            "score": lambda df: df['score'].max()
+        }
 
-# Clone and configure a model
-psuu clone-model cadcad-sandbox
+# Use the model
+model = MyModel()
+results = model.run({"alpha": 0.5, "beta": 3})
+```
 
-# Run optimization with the cloned model
-psuu run
+## Quick Example: Configuration-Based Integration
+
+```yaml
+# config.yaml
+model:
+  type: "cadcad"
+  module: "my_model"
+  entry_point: "MyModel"
+  
+parameters:
+  alpha: [0.1, 0.9]
+  beta: [1, 2, 3, 4, 5]
+  
+kpis:
+  score:
+    function: "calculate_score"
+    description: "Performance score"
+  
+optimization:
+  method: "bayesian"
+  objective: "score"
+  maximize: true
+  iterations: 30
+```
+
+```python
+from psuu import PsuuConfig
+
+# Load configuration
+config = PsuuConfig("config.yaml")
+
+# Load model
+model = config.load_model()
+
+# Run optimization with the model
+# ...
 ```
 
 ## Next Steps
