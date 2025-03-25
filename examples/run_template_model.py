@@ -60,9 +60,12 @@ def cli_integration(args):
     """
     print("Running optimization with CLI integration...")
     
-    # Define experiment with CLI integration
+    # Define experiment with CLI integration - use full path
+    template_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+    full_command = f"{sys.executable} {template_path}/template/__main__.py"
+    
     experiment = PsuuExperiment(
-        simulation_command="python -m template",
+        simulation_command=full_command,
         param_format="--{name} {value}",
         output_format="json"
     )

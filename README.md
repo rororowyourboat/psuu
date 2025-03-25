@@ -21,6 +21,7 @@ PSUU provides a framework for:
 - **Robust Error Handling**: Improved error handling and parameter validation
 - **Standardized Results Format**: Unified format for simulation results
 - **Extensible Architecture**: Easily add new optimization algorithms or KPI calculations
+- **Model Template**: Ready-to-use template for creating new cadCAD models
 
 ## 🔧 Installation
 
@@ -193,6 +194,8 @@ To use the template:
 3. Update the model class to implement your simulation logic
 4. Use either Protocol or CLI integration in your PSUU experiment
 
+See the [template README](template/README-TEMPLATE.md) for more details.
+
 ## 📚 Documentation
 
 For more detailed information, check out the following resources:
@@ -202,6 +205,7 @@ For more detailed information, check out the following resources:
 - [API Reference](docs/api_reference.md): Detailed API documentation
 - [Examples](examples/README.md): Example usage scenarios
 - [Integration Guide](docs/integration_guide.md): Guide for integrating models with PSUU
+- [Lessons Learned](docs/lessons_learned.md): Insights from implementing the cadCAD integration
 
 ## 🧪 Examples
 
@@ -210,6 +214,7 @@ Check out the `examples` directory for comprehensive examples:
 - `protocol_example`: Demonstrates the use of the model protocol interface
 - `cadcad_integration.py`: Shows how to integrate cadCAD models using the new protocol
 - `yaml_configuration.py`: Shows how to use YAML configuration for experiment setup
+- `run_template_model.py`: Example script for running the template model with different integration approaches
 
 ## 🤝 Contributing
 

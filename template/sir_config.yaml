@@ -55,8 +55,6 @@ kpis:
 optimization:
   algorithm: "bayesian"
   iterations: 30
-  initial_points: 5
-  exploration_weight: 0.3
   
   # Stopping criteria
   stopping_criteria:

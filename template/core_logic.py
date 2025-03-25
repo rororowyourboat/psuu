@@ -5,7 +5,7 @@ This module contains the core state transition functions and logic for the model
 independent of cadCAD-specific implementation details.
 """
 
-from typing import Dict, Any, Callable, List
+from typing import Dict, Any, Callable, List, Tuple
 
 
 def update_susceptible(params, state, dt=1.0):
@@ -84,22 +84,22 @@ def get_state_update_functions() -> List[Callable]:
     Get the list of state update functions.
     
     Returns:
-        List of state update functions
+        List of state update functions for cadCAD
     """
     def update_s_wrapper(params, substep, state_history, prev_state):
         new_value = update_susceptible(params, prev_state)
-        return {'susceptible': new_value}
+        return ("susceptible", new_value)  # Return a tuple as required by cadCAD
     
     def update_i_wrapper(params, substep, state_history, prev_state):
         new_value = update_infected(params, prev_state)
-        return {'infected': new_value}
+        return ("infected", new_value)  # Return a tuple as required by cadCAD
     
     def update_r_wrapper(params, substep, state_history, prev_state):
         new_value = update_recovered(params, prev_state)
-        return {'recovered': new_value}
+        return ("recovered", new_value)  # Return a tuple as required by cadCAD
     
     def update_timestep(params, substep, state_history, prev_state):
-        return {'timestep': prev_state['timestep'] + 1}
+        return ("timestep", prev_state['timestep'] + 1)  # Return a tuple as required by cadCAD
     
     return [update_s_wrapper, update_i_wrapper, update_r_wrapper, update_timestep]
 
