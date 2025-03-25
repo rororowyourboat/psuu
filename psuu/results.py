@@ -244,3 +244,78 @@ class SimulationResults:
                     print("PyYAML not installed. Skipping YAML export.")
         
         return saved_files
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """
+        Convert the results to a dictionary.
+        
+        Returns:
+            Dictionary representation of the results
+        """
+        result_dict = {
+            "metadata": convert_numpy_types(self.metadata),
+            "kpis": convert_numpy_types(self.kpis),
+            "parameters": convert_numpy_types(self.parameters),
+        }
+        
+        # Add time series data if available
+        if not self.time_series_data.empty:
+            # Convert to records format
+            result_dict["time_series"] = convert_numpy_types(
+                self.time_series_data.to_dict(orient='records')
+            )
+        
+        return result_dict
+    
+    def to_json(self) -> str:
+        """
+        Convert the results to a JSON string.
+        
+        Returns:
+            JSON string representation of the results
+        """
+        return json.dumps(self.to_dict(), cls=NumpyEncoder, indent=2)
+    
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> 'SimulationResults':
+        """
+        Create a SimulationResults instance from a dictionary.
+        
+        Args:
+            data: Dictionary with results data
+            
+        Returns:
+            SimulationResults instance
+        """
+        # Extract components
+        time_series = data.get("time_series")
+        kpis = data.get("kpis", {})
+        metadata = data.get("metadata", {})
+        parameters = data.get("parameters", {})
+        
+        # Convert time series to DataFrame if present
+        time_series_df = None
+        if time_series is not None:
+            time_series_df = pd.DataFrame(time_series)
+        
+        # Create instance
+        return cls(
+            time_series_data=time_series_df,
+            kpis=kpis,
+            metadata=metadata,
+            parameters=parameters
+        )
+    
+    @classmethod
+    def from_json(cls, json_str: str) -> 'SimulationResults':
+        """
+        Create a SimulationResults instance from a JSON string.
+        
+        Args:
+            json_str: JSON string with results data
+            
+        Returns:
+            SimulationResults instance
+        """
+        data = json.loads(json_str)
+        return cls.from_dict(data)

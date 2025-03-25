@@ -1,0 +1,81 @@
+# PSUU Configuration for SIR Model Optimization
+# =============================================
+
+# Model Configuration
+model:
+  name: "sir_model"
+  # Protocol integration mode
+  class: "template.model.SIRModel"
+  protocol: "cadcad"
+  
+  # Alternatively, for CLI integration mode:
+  # entry_point: "python -m template"
+  # param_format: "--{name} {value}"
+  # output_format: "json"
+  # working_dir: "."
+
+# Parameter Space Definition
+parameters:
+  beta:
+    type: continuous
+    min: 0.1
+    max: 0.5
+    description: "Infection rate parameter"
+    
+  gamma:
+    type: continuous
+    min: 0.01
+    max: 0.1
+    description: "Recovery rate parameter"
+    
+  population:
+    type: integer
+    values: [1000, 5000, 10000]
+    description: "Initial population size"
+
+# KPI Definitions
+kpis:
+  peak_infected:
+    objective: minimize
+    description: "Maximum number of infected people at any time"
+    critical: true
+    
+  total_infected:
+    objective: maximize
+    description: "Total number of people infected during the epidemic"
+    
+  epidemic_duration:
+    description: "Duration of the epidemic in days"
+    
+  r0:
+    description: "Basic reproduction number"
+    constraint: ">= 1.1"
+
+# Optimization Configuration
+optimization:
+  algorithm: "bayesian"
+  iterations: 30
+  initial_points: 5
+  exploration_weight: 0.3
+  
+  # Stopping criteria
+  stopping_criteria:
+    max_time_seconds: 3600
+    target_kpi:
+      peak_infected: 100
+
+# Output Configuration
+output:
+  save_dir: "results/sir_optimization"
+  formats: ["csv", "json", "yaml"]
+  save_all_iterations: true
+  visualizations:
+    - type: "parameter_sensitivity"
+      kpis: ["peak_infected"]
+
+# Advanced Configuration
+advanced:
+  parallel_evaluations: 4
+  timeout_seconds: 60
+  retry_failed: true
+  max_retries: 3

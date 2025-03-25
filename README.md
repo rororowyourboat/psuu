@@ -45,21 +45,28 @@ pip install "psuu[dev]"
 
 ## 🚀 Quick Start
 
-### Python API
+### Integration Approaches
+
+PSUU supports two main integration approaches:
+
+1. **Protocol Integration**: Using Python classes implementing ModelProtocol
+2. **CLI Integration**: Using command-line interfaces for models
+
+### Python API with CLI Integration
 
 ```python
 from psuu import PsuuExperiment
 
-# Define experiment
+# Define experiment with CLI integration
 experiment = PsuuExperiment(
-    simulation_command="python -m model"
+    simulation_command="python -m model",
+    param_format="--{name} {value}",
+    output_format="json"
 )
 
 # Define KPIs
-def peak_metric(df):
-    return df['metric_column'].max()
-
-experiment.add_kpi("peak", peak_metric)
+experiment.add_kpi("peak_infected", column="infected", operation="max")
+experiment.add_kpi("total_infected", column="total", operation="sum")
 
 # Set parameter space
 experiment.set_parameter_space({
@@ -70,7 +77,9 @@ experiment.set_parameter_space({
 # Configure optimization
 experiment.set_optimizer(
     method="bayesian",
-    iterations=20
+    objective_name="peak_infected",
+    maximize=False,
+    num_iterations=20
 )
 
 # Run optimization
@@ -78,92 +87,111 @@ results = experiment.run()
 
 # Access results
 best_params = results.best_parameters
+print(f"Best parameters: {best_params}")
+print(f"Best KPIs: {results.best_kpis}")
 ```
 
-### Using the Model Protocol
+### Using the Model Protocol Integration
 
 ```python
-from psuu import CadcadModelProtocol, SimulationResults
+from psuu import PsuuExperiment
+from template.model import SIRModel  # Using the template model
 
-class MyModel(CadcadModelProtocol):
-    def run(self, params, **kwargs):
-        # Implement model logic
-        results_df = self._run_simulation(params)
-        
-        # Return standardized results
-        return SimulationResults(
-            time_series_data=results_df,
-            kpis={"peak": results_df['metric'].max()},
-            metadata={"model_version": "1.0.0"},
-            parameters=params
-        )
-    
-    def get_parameter_space(self):
-        return {
-            "beta": (0.1, 0.5),
-            "gamma": (0.01, 0.1)
-        }
-    
-    def get_kpi_definitions(self):
-        return {
-            "peak": lambda df: df['metric'].max(),
-            "total": lambda df: df['metric'].sum()
-        }
+# Create model instance
+model = SIRModel()
+
+# Create experiment with model protocol integration
+experiment = PsuuExperiment(model=model)
+
+# Set objective
+experiment.set_optimizer(
+    method="bayesian",
+    objective_name="peak_infected",
+    maximize=False,
+    num_iterations=20
+)
+
+# Run optimization
+results = experiment.run()
+
+# Access results
+best_params = results.best_parameters
+print(f"Best parameters: {best_params}")
+print(f"Best KPIs: {results.best_kpis}")
 ```
 
-### Configuration-Based Integration
+### YAML Configuration-Based Integration
 
 ```yaml
 # config.yaml
 model:
-  type: "cadcad"
-  module: "my_model"
-  entry_point: "MyModel"
+  class: "template.model.SIRModel"  # Protocol integration
+  protocol: "cadcad"
+  
+  # Alternatively for CLI integration:
+  # entry_point: "python -m template"
+  # param_format: "--{name} {value}"
+  # output_format: "json"
   
 parameters:
-  beta: [0.1, 0.5]
-  gamma: [0.01, 0.1]
+  beta:
+    type: continuous
+    min: 0.1
+    max: 0.5
+  gamma:
+    type: continuous
+    min: 0.01
+    max: 0.1
   
 kpis:
-  peak:
-    function: "peak_metric"
-    description: "Maximum value of the metric"
+  peak_infected:
+    objective: minimize
+    description: "Maximum number of infected individuals"
   
 optimization:
-  method: "bayesian"
-  objective: "peak"
-  maximize: false
+  algorithm: "bayesian"
   iterations: 30
+  initial_points: 5
 ```
 
 ```python
-from psuu import PsuuConfig
+from psuu.config import configure_experiment_from_yaml
 
-# Load configuration
-config = PsuuConfig("config.yaml")
+# Load configuration and create experiment
+experiment = configure_experiment_from_yaml("config.yaml")
 
-# Load model
-model = config.load_model()
-
-# Run optimization with the model
-# ...
+# Run optimization
+results = experiment.run()
 ```
 
 ### CLI Usage
 
 ```bash
-# Initialize configuration
+# Run optimization with YAML config
+python -m psuu --config template/sir_config.yaml
+
+# Or initialize and run manually
 psuu init
-
-# Define parameter space
 psuu add-param --name "beta" --range 0.1 0.5
-
-# Add KPI function
-psuu add-kpi --name "peak" --column "metric_column" --operation "max"
-
-# Run optimization
+psuu add-kpi --name "peak_infected" --column "infected" --operation "max"
 psuu run
 ```
+
+## 📝 Template Model
+
+PSUU includes a template model in the `template/` directory that demonstrates the recommended structure for cadCAD models to integrate with PSUU. The template follows these principles:
+
+- Separation of model logic, parameters, and KPIs
+- Standard output schema via SimulationResults
+- Support for both Protocol and CLI integration
+- Proper parameter validation
+
+To use the template:
+
+1. Copy the `template/` directory to your project
+2. Modify the parameters, logic, and KPIs as needed
+3. Update the model class to implement your simulation logic
+4. Use either Protocol or CLI integration in your PSUU experiment
 
 ## 📚 Documentation
 
@@ -173,6 +201,7 @@ For more detailed information, check out the following resources:
 - [User Guide](docs/user_guide.md): More detailed guidance
 - [API Reference](docs/api_reference.md): Detailed API documentation
 - [Examples](examples/README.md): Example usage scenarios
+- [Integration Guide](docs/integration_guide.md): Guide for integrating models with PSUU
 
 ## 🧪 Examples
 
@@ -180,6 +209,7 @@ Check out the `examples` directory for comprehensive examples:
 
 - `protocol_example`: Demonstrates the use of the model protocol interface
 - `cadcad_integration.py`: Shows how to integrate cadCAD models using the new protocol
+- `yaml_configuration.py`: Shows how to use YAML configuration for experiment setup
 
 ## 🤝 Contributing
 
