@@ -1,6 +1,6 @@
 // API client for PSUU backend
 
-// Default API base URL
+// Default API base URL - change to point to template model module
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
 // Types for API requests and responses
@@ -82,6 +82,10 @@ async function fetchWithErrorHandling(endpoint: string, options: RequestInit = {
 export const api = {
   // Model connection
   testConnection: async (connection: ModelConnection): Promise<{ success: boolean; message: string }> => {
+    // Default to template.model.SIRModel if no moduleClass is provided
+    if (connection.type === 'protocol' && !connection.details.moduleClass) {
+      connection.details.moduleClass = 'template.model.SIRModel';
+    }
     return fetchWithErrorHandling('/models/test-connection', {
       method: 'POST',
       body: JSON.stringify(connection),
