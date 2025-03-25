@@ -43,6 +43,12 @@ export default function Layout({ children }: LayoutProps) {
       step: 'results', 
       enabled: state.optimizationResults !== null
     },
+    {
+      name: 'API Docs',
+      path: '/api-docs',
+      step: 'docs',
+      enabled: true
+    }
   ];
   
   return (
@@ -70,6 +76,7 @@ export default function Layout({ children }: LayoutProps) {
                   ${item.enabled ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'} 
                   ${router.pathname === item.path ? 'bg-slate-600 font-medium' : 'hover:bg-slate-600'}
                   transition-colors duration-150
+                  ${item.path === '/api-docs' ? 'ml-auto' : ''}
                 `}
               >
                 {item.name}

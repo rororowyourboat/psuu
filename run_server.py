@@ -1,4 +1,91 @@
-"""Run PSUU server with template model."""
+"""Run PSUU server with template model.
+
+API Documentation:
+----------------
+
+Model Connection:
+POST /api/models/test-connection
+    Test connection to simulation model
+    Request: {
+        "type": "protocol" | "cli",
+        "details": {
+            "moduleClass": str,  # For protocol connection
+            "protocol": str,     # For protocol connection
+            "command": str,      # For CLI connection
+            "paramFormat": str,  # For CLI connection
+            "outputFormat": str, # For CLI connection
+            "workingDir": str    # For CLI connection
+        }
+    }
+    Response: {
+        "success": bool,
+        "message": str
+    }
+
+Parameters:
+GET /api/parameters
+    Get model parameter space definition
+    Response: [
+        {
+            "name": str,
+            "type": "continuous" | "integer" | "categorical",
+            "min": float,      # For continuous/integer
+            "max": float,      # For continuous/integer
+            "values": list,    # For categorical
+            "description": str  # Optional
+        }
+    ]
+
+POST /api/parameters
+    Update parameter space configuration
+    Request: {
+        "parameters": [Parameter]
+    }
+
+KPIs:
+GET /api/kpis
+    Get available KPI definitions
+    Response: [
+        {
+            "name": str,
+            "type": "custom",
+            "isObjective": bool,
+            "maximize": bool
+        }
+    ]
+
+POST /api/kpis
+    Update KPI configuration
+    Request: {
+        "kpis": [KPI]
+    }
+
+Optimization:
+POST /api/optimization/configure
+    Configure optimization settings
+    Request: {
+        "method": "grid" | "random" | "bayesian",
+        "iterations": int,
+        "initialPoints": int,  # For bayesian
+        "seed": int           # Optional
+    }
+
+POST /api/optimization/start
+    Start optimization process
+    Response: {
+        "jobId": str,
+        "status": str,
+        "progress": int
+    }
+
+GET /api/optimization/stream
+    Stream optimization updates (Server-Sent Events)
+    Events:
+        - step: Simulation step update
+        - complete: Final results
+        - error: Error message
+"""
+
 from psuu import PsuuExperiment
 from template.model import SIRModel
 from flask import Flask, jsonify, request, Response
@@ -84,6 +171,7 @@ def run_optimization():
 
 @app.route('/api/models/test-connection', methods=['POST'])
 def test_connection():
+    """Test connection to simulation model."""
     data = request.json
     if data['type'] == 'protocol' and data['details']['moduleClass'] == 'template.model.SIRModel':
         return jsonify({'success': True, 'message': 'Connected to template SIR model'})
@@ -91,6 +179,7 @@ def test_connection():
 
 @app.route('/api/parameters', methods=['GET', 'POST'])
 def parameters():
+    """Get or update parameter space configuration."""
     if request.method == 'GET':
         param_space = model.get_parameter_space()
         parameters = []
@@ -119,6 +208,7 @@ def parameters():
 
 @app.route('/api/kpis', methods=['GET', 'POST'])
 def kpis():
+    """Get or update KPI configuration."""
     if request.method == 'GET':
         kpi_defs = model.get_kpi_definitions()
         kpis = []
@@ -138,18 +228,9 @@ def kpis():
         except Exception as e:
             return jsonify({'success': False, 'error': str(e)}), 400
 
-@app.route('/api/simulation/run', methods=['POST'])
-def run_simulation():
-    params = request.json['parameters']
-    result = model.run(params)
-    return jsonify({
-        'time_series': result.time_series_data.to_dict(orient='records'),
-        'kpis': result.kpis,
-        'metadata': result.metadata
-    })
-
 @app.route('/api/optimization/configure', methods=['POST'])
 def configure_optimization():
+    """Configure optimization settings."""
     try:
         config = request.json
         return jsonify({'success': True})
@@ -158,6 +239,7 @@ def configure_optimization():
 
 @app.route('/api/optimization/start', methods=['POST'])
 def start_optimization():
+    """Start optimization process."""
     global optimization_running
     if not optimization_running:
         # Start optimization in a new thread
@@ -171,6 +253,7 @@ def start_optimization():
 
 @app.route('/api/optimization/stream')
 def stream_optimization():
+    """Stream optimization updates."""
     def generate():
         while True:
             try:
@@ -184,14 +267,6 @@ def stream_optimization():
                 yield f"data: {json.dumps({'type': 'ping'})}\n\n"
     
     return Response(generate(), mimetype='text/event-stream')
-
-@app.route('/api/optimization/status/<job_id>', methods=['GET'])
-def optimization_status(job_id):
-    return jsonify({
-        'status': 'running' if optimization_running else 'completed',
-        'progress': 50,
-        'message': 'Optimization in progress'
-    })
 
 if __name__ == '__main__':
     print("\nPSUU Template Model Server")
