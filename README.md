@@ -178,6 +178,158 @@ psuu add-kpi --name "peak_infected" --column "infected" --operation "max"
 psuu run
 ```
 
+## 🧠 Core Concepts
+
+Understanding the core concepts of PSUU will help cadCAD users effectively integrate their models with the framework.
+
+### Architecture Overview
+
+PSUU provides a flexible architecture to connect with simulation models:
+
+```mermaid
+graph TD
+    User(User)
+    subgraph "PSUU"
+        CLI[CLI Interface]
+        Config[Configuration Manager]
+        Experiment[Experiment Controller]
+        Optimizer[Optimization Algorithms]
+        Connector[Simulation Connector]
+        Protocol[Model Protocol]
+        KPI[KPI Calculator]
+        Results[Results Aggregator]
+    end
+    subgraph "Integration Options"
+        ModelImpl[Model Implementation]
+        CLITool[CLI-based Simulation]
+    end
+    
+    User --> CLI
+    User --> Config
+    CLI --> Experiment
+    Config --> Experiment
+    
+    Experiment --> Optimizer
+    Experiment --> Connector
+    Experiment --> Protocol
+    Experiment --> KPI
+    Experiment --> Results
+    
+    Protocol --> ModelImpl
+    Connector --> CLITool
+```
+
+### Integration Approaches
+
+PSUU offers two main ways to connect with cadCAD models:
+
+1. **Protocol Integration**: Direct connection to Python model classes implementing `ModelProtocol`
+   - Preferred for new models or when you have control over the model code
+   - Faster and more efficient as it avoids CLI overhead
+   - Provides more detailed error information
+   - Requires implementing specific interfaces
+
+2. **CLI Integration**: Connection via command-line interface
+   - Useful for existing models with established CLI interfaces
+   - Allows integration without modifying the original model code
+   - Works with models in any language, not just Python
+   - More resilient to model crashes
+
+```mermaid
+graph LR
+    subgraph "PSUU"
+        Experiment[PsuuExperiment]
+    end
+    
+    subgraph "Protocol Integration"
+        ModelProtocol[ModelProtocol]
+        CadcadProtocol[CadcadModelProtocol]
+        ModelImpl[Custom Model Implementation]
+        
+        ModelProtocol --- CadcadProtocol
+        CadcadProtocol --- ModelImpl
+    end
+    
+    subgraph "CLI Integration"
+        SimConnector[SimulationConnector]
+        CadcadConnector[CadcadSimulationConnector]
+        CLITool[CLI-based Simulation]
+        
+        SimConnector --- CadcadConnector
+        CadcadConnector --- CLITool
+    end
+    
+    Experiment --> ModelProtocol
+    Experiment --> SimConnector
+```
+
+### Core Components
+
+- **PsuuExperiment**: Central class that coordinates the optimization process
+- **ModelProtocol**: Abstract base class defining the interface for model integration
+- **CadcadModelProtocol**: cadCAD-specific protocol extending the base ModelProtocol
+- **SimulationConnector**: Handles running simulations via CLI and parsing results
+- **KPICalculator**: Calculates performance metrics from simulation results
+- **Optimizers**: Algorithms for exploring the parameter space (Grid, Random, Bayesian, etc.)
+- **Configuration**: Utilities for loading and validating experiment configurations
+
+### Parameter Space Definition
+
+Parameters can be defined in several ways:
+
+- **Continuous parameters**: Specified as `(min, max)` tuples
+- **Discrete parameters**: Specified as lists of possible values
+- **Integer parameters**: Specified as `(min, max)` with integer constraint
+- **Categorical parameters**: Specified as lists of possible values (no ordering)
+
+### KPI Definition
+
+Key Performance Indicators (KPIs) are metrics calculated from simulation results:
+
+- **Simple KPIs**: Defined by column name and operation (max, min, mean, sum, etc.)
+- **Custom KPIs**: Defined by custom Python functions
+- **Objective KPIs**: Selected KPIs targeted for optimization (maximize or minimize)
+
+### Optimization Workflow
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant PSUU as PSUU Experiment
+    participant Optimizer
+    participant Connector as CadcadConnector
+    participant cadCAD as cadCAD Model
+    
+    User->>PSUU: Configure experiment
+    User->>PSUU: Set parameters & KPIs
+    User->>PSUU: Run optimization
+    
+    loop Until optimization complete
+        PSUU->>Optimizer: Request parameters
+        Optimizer-->>PSUU: Suggested parameters
+        
+        alt Protocol Integration
+            PSUU->>cadCAD: model.run(parameters)
+            cadCAD->>cadCAD: Execute simulation
+            cadCAD-->>PSUU: Return SimulationResults
+        else CLI Integration
+            PSUU->>Connector: run_simulation(parameters)
+            Connector->>cadCAD: Execute CLI command
+            cadCAD->>cadCAD: Run simulation
+            cadCAD-->>Connector: Write output files
+            Connector->>Connector: Parse output files
+            Connector-->>PSUU: Return DataFrame results
+        end
+        
+        PSUU->>PSUU: Calculate KPIs
+        PSUU->>Optimizer: Update with KPI values
+    end
+    
+    PSUU-->>User: Return best parameters and KPIs
+```
+
+For a comprehensive explanation of the architecture with additional diagrams, please see [diagrams.md](diagrams.md).
+
 ## 📝 Template Model
 
 PSUU includes a template model in the `template/` directory that demonstrates the recommended structure for cadCAD models to integrate with PSUU. The template follows these principles:
